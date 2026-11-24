@@ -29,7 +29,7 @@
 ### Deployment
 Platform: Netlify
 
-Live URL: ADD_YOUR_ACTUAL_DEPLOYMENT_URL_HERE
+Live URL: https://app.netlify.com/projects/sage-arithmetic-1a41ac/agent-runs/new
 
 ### Version
 v1.0.0
