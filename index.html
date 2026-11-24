@@ -1,0 +1,417 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Task Manager</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 650px;
+            margin: 50px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px #00000015;
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            font-size: 15px;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .switch {
+            text-align: center;
+            color: #2563eb;
+            cursor: pointer;
+        }
+
+        .task {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 7px;
+        }
+
+        .task.completed h3 {
+            text-decoration: line-through;
+            color: gray;
+        }
+
+        .task button {
+            width: auto;
+            padding: 8px 12px;
+            margin-right: 5px;
+        }
+
+        .delete {
+            background: #dc2626;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .logout {
+            background: #64748b;
+        }
+
+        .message {
+            text-align: center;
+            color: #dc2626;
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                margin: 20px auto;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Signup and Login Section -->
+        <div id="authSection">
+
+            <h1>Student Task Manager</h1>
+
+            <div id="signupForm">
+                <h2>Create Account</h2>
+
+                <input type="text" id="signupName"
+                    placeholder="Enter your name">
+
+                <input type="email" id="signupEmail"
+                    placeholder="Enter your email">
+
+                <input type="password" id="signupPassword"
+                    placeholder="Create password">
+
+                <button onclick="signup()">Sign Up</button>
+
+                <p class="switch" onclick="showLogin()">
+                    Already have an account? Login
+                </p>
+            </div>
+
+            <div id="loginForm" class="hidden">
+                <h2>Login</h2>
+
+                <input type="email" id="loginEmail"
+                    placeholder="Enter your email">
+
+                <input type="password" id="loginPassword"
+                    placeholder="Enter password">
+
+                <button onclick="login()">Login</button>
+
+                <p class="switch" onclick="showSignup()">
+                    Create a new account
+                </p>
+            </div>
+
+            <p id="authMessage" class="message"></p>
+
+        </div>
+
+        <!-- Task Dashboard -->
+        <div id="dashboard" class="hidden">
+
+            <h1>My Tasks</h1>
+
+            <h3 id="welcomeMessage"></h3>
+
+            <input type="text" id="taskTitle"
+                placeholder="Enter task title">
+
+            <textarea id="taskDescription"
+                placeholder="Enter task description"></textarea>
+
+            <button onclick="addTask()">Add Task</button>
+
+            <button class="logout" onclick="logout()">
+                Logout
+            </button>
+
+            <h2>Task List</h2>
+
+            <div id="taskList"></div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        let currentUser = localStorage.getItem("currentUser");
+
+        function getUsers() {
+            return JSON.parse(localStorage.getItem("users")) || [];
+        }
+
+        function signup() {
+            let name = document.getElementById("signupName").value.trim();
+            let email = document.getElementById("signupEmail").value.trim().toLowerCase();
+            let password = document.getElementById("signupPassword").value;
+
+            let users = getUsers();
+
+            if (!name || !email || !password) {
+                showMessage("Please fill all fields.");
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage("Password must have at least 6 characters.");
+                return;
+            }
+
+            let existingUser = users.find(user => user.email === email);
+
+            if (existingUser) {
+                showMessage("Email already registered.");
+                return;
+            }
+
+            users.push({
+                name: name,
+                email: email,
+                password: password
+            });
+
+            localStorage.setItem("users", JSON.stringify(users));
+
+            showMessage("Account created successfully. Please login.");
+            showLogin();
+        }
+
+        function login() {
+            let email = document.getElementById("loginEmail").value.trim().toLowerCase();
+            let password = document.getElementById("loginPassword").value;
+
+            let users = getUsers();
+
+            let user = users.find(
+                user => user.email === email && user.password === password
+            );
+
+            if (!user) {
+                showMessage("Invalid email or password.");
+                return;
+            }
+
+            currentUser = email;
+
+            localStorage.setItem("currentUser", email);
+
+            showDashboard();
+        }
+
+        function logout() {
+            localStorage.removeItem("currentUser");
+            currentUser = null;
+
+            document.getElementById("dashboard").classList.add("hidden");
+            document.getElementById("authSection").classList.remove("hidden");
+
+            showLogin();
+        }
+
+        function showSignup() {
+            document.getElementById("signupForm").classList.remove("hidden");
+            document.getElementById("loginForm").classList.add("hidden");
+            document.getElementById("authMessage").textContent = "";
+        }
+
+        function showLogin() {
+            document.getElementById("signupForm").classList.add("hidden");
+            document.getElementById("loginForm").classList.remove("hidden");
+            document.getElementById("authMessage").textContent = "";
+        }
+
+        function showMessage(message) {
+            document.getElementById("authMessage").textContent = message;
+        }
+
+        function getTasks() {
+            return JSON.parse(
+                localStorage.getItem("tasks_" + currentUser)
+            ) || [];
+        }
+
+        function saveTasks(tasks) {
+            localStorage.setItem(
+                "tasks_" + currentUser,
+                JSON.stringify(tasks)
+            );
+        }
+
+        function addTask() {
+            let title = document.getElementById("taskTitle").value.trim();
+            let description = document.getElementById("taskDescription").value.trim();
+
+            if (!title) {
+                alert("Please enter a task title.");
+                return;
+            }
+
+            let tasks = getTasks();
+
+            tasks.push({
+                id: Date.now(),
+                title: title,
+                description: description,
+                completed: false
+            });
+
+            saveTasks(tasks);
+
+            document.getElementById("taskTitle").value = "";
+            document.getElementById("taskDescription").value = "";
+
+            displayTasks();
+        }
+
+        function deleteTask(id) {
+            let tasks = getTasks();
+
+            tasks = tasks.filter(task => task.id !== id);
+
+            saveTasks(tasks);
+
+            displayTasks();
+        }
+
+        function completeTask(id) {
+            let tasks = getTasks();
+
+            tasks = tasks.map(task => {
+                if (task.id === id) {
+                    task.completed = !task.completed;
+                }
+
+                return task;
+            });
+
+            saveTasks(tasks);
+
+            displayTasks();
+        }
+
+        function displayTasks() {
+            let tasks = getTasks();
+            let taskList = document.getElementById("taskList");
+
+            taskList.innerHTML = "";
+
+            if (tasks.length === 0) {
+                taskList.textContent = "No tasks added yet.";
+                return;
+            }
+
+            tasks.forEach(task => {
+                let taskDiv = document.createElement("div");
+
+                taskDiv.className = task.completed
+                    ? "task completed"
+                    : "task";
+
+                let title = document.createElement("h3");
+                title.textContent = task.title;
+
+                let description = document.createElement("p");
+                description.textContent = task.description;
+
+                let completeButton = document.createElement("button");
+                completeButton.textContent = task.completed
+                    ? "Undo"
+                    : "Complete";
+
+                completeButton.onclick = function() {
+                    completeTask(task.id);
+                };
+
+                let deleteButton = document.createElement("button");
+                deleteButton.textContent = "Delete";
+                deleteButton.className = "delete";
+
+                deleteButton.onclick = function() {
+                    deleteTask(task.id);
+                };
+
+                taskDiv.appendChild(title);
+                taskDiv.appendChild(description);
+                taskDiv.appendChild(completeButton);
+                taskDiv.appendChild(deleteButton);
+
+                taskList.appendChild(taskDiv);
+            });
+        }
+
+        function showDashboard() {
+            let users = getUsers();
+
+            let user = users.find(
+                user => user.email === currentUser
+            );
+
+            if (!user) {
+                logout();
+                return;
+            }
+
+            document.getElementById("authSection").classList.add("hidden");
+            document.getElementById("dashboard").classList.remove("hidden");
+
+            document.getElementById("welcomeMessage").textContent =
+                "Welcome, " + user.name;
+
+            displayTasks();
+        }
+
+        // Check whether a user is already logged in
+        if (currentUser) {
+            showDashboard();
+        }
+
+    </script>
+
+</body>
+</html>
